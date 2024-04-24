@@ -1,4 +1,130 @@
-import pandas as pd
+import pandas as pd, requests
+from time import sleep
+from tqdm import tqdm
+
+# вивантажити інформацію про партії з АРІ
+def download_party_info():
+
+    # таблиця зі всіма партіями (api/getpartylistmain)
+    party_list = requests.get('https://politdata.nazk.gov.ua/api/getpartylistmain').json()
+    party_list = pd.DataFrame(party_list['data'])
+    party_list = party_list.drop(['locationFact','politPartyUnitId','locations'], axis=1)
+
+
+    # таблиця зі всіма регіональними представництвами (api/getpartylistregion)
+    party_region_list = requests.get('https://politdata.nazk.gov.ua/api/getpartylistregion').json()
+    party_region_list = pd.DataFrame(party_region_list['data'])
+    party_region_list = party_region_list.drop(['locationFact','locations'], axis=1) 
+
+    # додати інформацію про центральні партії до регіональних філій
+    party_region_list = party_region_list.merge(party_list[['name','unitId','code']]
+                                                .rename({'name':'party_main_name', 'code':'party_main_EDRPOU','unitId':'party_main_unitId'}, 
+                                                        axis=1), 
+                                                right_on='party_main_unitId', 
+                                                left_on='politPartyUnitId', 
+                                                how='left')
+
+    # перейменувати
+    party_region_list = party_region_list.rename({'name':'local_org_name', 'code':'local_org_EDRPOU'},axis=1)
+
+    return party_list, party_region_list
+
+
+
+def download_all_reports(full_update):
+    
+    # завантажити список всіх звітів, які є в системі
+    report_list = requests.get('https://politdata.nazk.gov.ua/api/getreportslist').json()
+    report_list = [X['id'] for X in report_list]
+
+    # завантажити список всіх звітів, які вже були завантажені
+    with open('data/data_for_downloader/downloaded_report_ids.txt', 'r') as f:
+        downloaded_report_ids = f.read().splitlines()
+
+    # у залежності від типу оновлення (повний чи частковий) визначити список звітів, які потрібно завантажити
+    if full_update:
+        reports_to_download = report_list
+    else:
+        reports_to_download = [x for x in report_list if x not in downloaded_report_ids]
+
+    # download
+    r_df = pd.DataFrame()
+    for i in tqdm(reports_to_download):
+        one_report = requests.get(f'https://politdata.nazk.gov.ua/api/getreport/{i}').json()
+        
+        one_report_df = pd.DataFrame(one_report)
+        one_report_df['report_id'] = i
+        r_df = pd.concat([r_df, one_report_df], axis=0, ignore_index=True)
+
+        sleep(0.2)
+
+    # Файл зі всіма завантаженими звітами
+    if full_update:
+        # створити новий файл зі всіма завантаженими звітами
+        with open('data/data_for_downloader/downloaded_report_ids.txt', 'w') as f:
+            for report_id in r_df['report_id'].unique():
+                f.write(str(report_id) + '\n')
+
+    else:
+        # додати підвантажені звіти до txt файлу
+        with open('data/data_for_downloader/downloaded_report_ids.txt', 'a') as f:
+            for report_id in r_df['report_id'].unique():
+                f.write(str(report_id) + '\n')
+
+    # додати інфу про центральний офіс (який був визначений в кожному звіті)
+    party_main_finder = r_df.loc[r_df.officeType=="Центральний офіс",['report_id','partyCode','partyName']].rename({'partyCode':'party_main_EDRPOU','partyName':'party_main_name'}, axis=1)
+
+    # обʼєднати r_df та party_main_finder
+    r_df = r_df.merge(party_main_finder, on='report_id', how='left')
+
+    return r_df
+
+
+
+
+# Чистка назв партій
+def party_name_cleaner(r_df, party_variable):
+
+    r_df[party_variable] = r_df[party_variable].str.upper()
+
+    to_delete = ['^ПОЛІТИЧНА ПАРТІЯ ', '^ВСЕУКРАЇНСЬКЕ ОБ\'ЄДНАННЯ ', 'ВСЕУКРАЇНСЬКЕ ПОЛІТИЧНЕ ОБ\'ЄДНАННЯ',
+                'ПОЛІТИЧЯНА ПАРТІЯ','СОЦІАЛЬНО-ЕКОЛОГІЧНА ПАРТІЯ', 'ВСЕУКРАЇНСЬКЕ ОБ\'ЄДНАННЯ', 'СОЦІАЛЬНО-ПОЛІТИЧНИЙ СОЮЗ ',
+                '«', '»', '\"']
+    for words in to_delete:
+        r_df[party_variable] = r_df[party_variable].str.replace(words, '', regex=True)
+
+    # прибрати зайві пробіли
+    r_df[party_variable] = r_df[party_variable].str.replace('\s+', ' ', regex=True).str.strip()
+
+    # ручні правки
+    party_renamer = {
+        'РІШУЧИХ ДІЙ': 'ПАРТІЯ РІШУЧИХ ДІЙ',
+        'КОНКРЕТНИХ СПРАВ':'ПАРТІЯ КОНКРЕТНИХ СПРАВ',
+        'БЛОК СВІТЛИЧНОЇ РАЗОМ!':'БЛОК СВІТЛИЧНОЇ «РАЗОМ!»',
+        'ПАРТІЯ ВОЛОДИМИРА БУРЯКА ЄДНАННЯ':'ПАРТІЯ ВОЛОДИМИРА БУРЯКА «ЄДНАННЯ»',
+        'МИР':'ВСЕУКРАЇНСЬКЕ ОБ\'ЄДНАННЯ «МИР»',
+        'ПАРТІЯ ІГОРЯ КОЛИХАЄВА НАМ ТУТ ЖИТИ!':'ПАРТІЯ ІГОРЯ КОЛИХАЄВА «НАМ ТУТ ЖИТИ!»',
+        'КОМАНДА МАКСИМА ЄФІМОВА НАШ КРАМАТОРСЬК':'КОМАНДА МАКСИМА ЄФІМОВА «НАШ КРАМАТОРСЬК»',
+        'ГРОМАДСЬКО-ПОЛІТИЧНИЙ РУХ ВАЛЕНТИНА НАЛИВАЙЧЕНКА СПРАВЕДЛИВІСТЬ':'ГРОМАДСЬКО-ПОЛІТИЧНИЙ РУХ ВАЛЕНТИНА НАЛИВАЙЧЕНКА «СПРАВЕДЛИВІСТЬ»',
+        'МАЛОГО І СЕРЕДНЬОГО БІЗНЕСУ УКРАЇНИ':'ПАРТІЯ МАЛОГО І СЕРЕДНЬОГО БІЗНЕСУ УКРАЇНИ',
+        'БЛОК ВІЛКУЛА УКРАЇНСЬКА ПЕРСПЕКТИВА':'БЛОК ВІЛКУЛА «УКРАЇНСЬКА ПЕРСПЕКТИВА»',
+        'НАЦІОНАЛЬНО-ДЕМОКРАТИЧНЕ ОБ\'ЄДНАННЯ УКРАЇНА':'НАЦІОНАЛЬНО-ДЕМОКРАТИЧНЕ ОБ\'ЄДНАННЯ «УКРАЇНА»',
+        'ГРОМАДЯНСЬКИЙ РУХ СВІДОМІ':'ГРОМАДЯНСЬКИЙ РУХ «СВІДОМІ»',
+        'ВО ПЛАТФОРМА ГРОМАД':'ПЛАТФОРМА ГРОМАД'
+    }
+
+    r_df[party_variable] = r_df[party_variable].replace(party_renamer)
+
+    return r_df
+
+
+# Якщо серед донорів зустрічаються партійні осередки чи центральний офіс політичної партії 'donor_type' замінити на “партійний осередок” (визначила по 'donor_edrpou')
+def check_edrpou_for_party(table, var_edrpou_to_search, var_to_replace, party_list, party_region_list):
+    table.loc[(table[var_edrpou_to_search].isin(party_list.code.tolist()))|
+              (table[var_edrpou_to_search].isin(party_region_list.local_org_EDRPOU.tolist())), 
+              var_to_replace] = 'Партійний осередок'
+    return table
+
 
 
 def subset_table(df, main_var, cols_to_select):
