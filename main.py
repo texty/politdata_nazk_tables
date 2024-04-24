@@ -1,12 +1,13 @@
 # ! pip install openpyxl xlsxwriter requests pandas tqdm
 
+import os
 from datetime import datetime
 from main_functions import download_party_info, download_all_reports, party_name_cleaner
 from table_functions import table_0_1, table_0_2, table_1, table_2_1, table_2_2, table_3_1, table_3_2, table_3_3, table_3_4, table_3_5, table_4, table_5, table_6, table_7, table_8, table_9_1, table_9_2, table_9_3, table_9_5, table_10, files_where_to_look_for_local_parties
 
 
 # !!! set to True if you want to update all data from the very beginning
-full_update = True
+full_update = False
 
 
 ## Download party info
@@ -95,6 +96,9 @@ now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
 with open('README.md', 'r') as file:
     data = file.readlines()
-    data.append(f"\n\n**Останнє оновлення: {now}**\n")
+    data.append(f"**Останнє оновлення: {now}**\n")
 with open('README.md', 'w') as file:
     file.writelines(data)
+
+# запушити на гітхаб
+os.system('!git add .; git commit -m "data update"; git push origin main')

@@ -30,7 +30,7 @@ def download_party_info():
     return party_list, party_region_list
 
 
-
+# завантажити всі звіти
 def download_all_reports(full_update):
     
     # завантажити список всіх звітів, які є в системі
@@ -47,35 +47,46 @@ def download_all_reports(full_update):
     else:
         reports_to_download = [x for x in report_list if x not in downloaded_report_ids]
 
-    # download
-    r_df = pd.DataFrame()
-    for i in tqdm(reports_to_download):
-        one_report = requests.get(f'https://politdata.nazk.gov.ua/api/getreport/{i}').json()
-        
-        one_report_df = pd.DataFrame(one_report)
-        one_report_df['report_id'] = i
-        r_df = pd.concat([r_df, one_report_df], axis=0, ignore_index=True)
+    if len(reports_to_download) > 0:
 
-        sleep(0.2)
+        # download
+        r_df = pd.DataFrame()
+        for i in tqdm(reports_to_download):
+            one_report = requests.get(f'https://politdata.nazk.gov.ua/api/getreport/{i}').json()
+            
+            one_report_df = pd.DataFrame(one_report)
+            one_report_df['report_id'] = i
+            r_df = pd.concat([r_df, one_report_df], axis=0, ignore_index=True)
 
-    # Файл зі всіма завантаженими звітами
-    if full_update:
-        # створити новий файл зі всіма завантаженими звітами
-        with open('data/data_for_downloader/downloaded_report_ids.txt', 'w') as f:
-            for report_id in r_df['report_id'].unique():
-                f.write(str(report_id) + '\n')
+            sleep(0.2)
+
+        # Файл зі всіма завантаженими звітами
+        if full_update:
+            # створити новий файл зі всіма завантаженими звітами
+            with open('data/data_for_downloader/downloaded_report_ids.txt', 'w') as f:
+                for report_id in r_df['report_id'].unique():
+                    f.write(str(report_id) + '\n')
+
+        else:
+            # додати підвантажені звіти до txt файлу
+            with open('data/data_for_downloader/downloaded_report_ids.txt', 'a') as f:
+                for report_id in r_df['report_id'].unique():
+                    f.write(str(report_id) + '\n')
+
+        # додати інфу про центральний офіс (який був визначений в кожному звіті)
+        party_main_finder = r_df.loc[r_df.officeType=="Центральний офіс",['report_id','partyCode','partyName']].rename({'partyCode':'party_main_EDRPOU','partyName':'party_main_name'}, axis=1)
+
+        # обʼєднати r_df та party_main_finder
+        r_df = r_df.merge(party_main_finder, on='report_id', how='left')
 
     else:
-        # додати підвантажені звіти до txt файлу
-        with open('data/data_for_downloader/downloaded_report_ids.txt', 'a') as f:
-            for report_id in r_df['report_id'].unique():
-                f.write(str(report_id) + '\n')
-
-    # додати інфу про центральний офіс (який був визначений в кожному звіті)
-    party_main_finder = r_df.loc[r_df.officeType=="Центральний офіс",['report_id','partyCode','partyName']].rename({'partyCode':'party_main_EDRPOU','partyName':'party_main_name'}, axis=1)
-
-    # обʼєднати r_df та party_main_finder
-    r_df = r_df.merge(party_main_finder, on='report_id', how='left')
+        r_df = pd.DataFrame(columns=['date','year','types','period','website','obligate','tablets1','tablets2','isWebsite','partyCode','partyName','documentId','officeType','paymentGov','headLastName','paymentOther','reportNumber','headFirstName',
+                                     'propertyMoney','quantityFirst','quantityThird','headMiddleName','propertyPapers','quantitySecond','signerFullName','paymentOtherSum','propertyNoMoney','propertyObjects','headLocationCity','propertyMovables',
+                                     'contributionCosts','partyLocationCity','propertyTransport','headLocationRegion','partyLocationIndex','headLocationCountry','partyIsLocationSame','partyLocationRegion','contributionConMoney','contributionOtherCon',
+                                     'partyLocationCountry','partyLocationBuilding','partyLocationDistrict','contributionOtherCosts','partyLocationCountryFact','paymentCostsPaymentReceive','paymentOtherCostsPaymentReceive','id','report_id','headLocationApt',
+                                     'partyLocationApt','partyLocationAptFact','partyLocationIndexFact','partyLocationKorpusFact','partyLocationRegionFact','partyLocationBuildingFact','partyLocationDistrictFact','partyLocationStreet','headIdNumber',
+                                     'headIdIssurer','isAddedToCentralOffice','partyLocationCityFact','partyLocationStreetFact','headProxyDoc','headLocationKorpus','partyLocationKorpus','headLocationAptFact','headLocationIndexFact','headLocationRegionFact',
+                                     'headLocationStreetFact','headLocationCountryFact','headLocationBuildingFact','headLocationDistrictFact','party_main_EDRPOU','party_main_name'])
 
     return r_df
 
@@ -198,13 +209,13 @@ def clean_bank_account(bank_account_column):
 
 
 org_names_to_rename = {
- 'ТОВ ПІДПРИЄМСТВО КИЇВ': 'ТОВ ПІДПРИЄМСТВО "КИЇВ"',
- 'ТОВ "ПІДПРИЄМСТВО "КИЇВ"': 'ТОВ ПІДПРИЄМСТВО "КИЇВ"',
- 'ПІДПРИЄМСТВО "КИЇВ" ТОВ': 'ТОВ ПІДПРИЄМСТВО "КИЇВ"',
- 'ТОВ "ПІДПРИЄМСТВО КИЇВ"': 'ТОВ ПІДПРИЄМСТВО "КИЇВ"',
- 'ПІДПРИЄМСТВО "КИЇВ"': 'ТОВ ПІДПРИЄМСТВО "КИЇВ"',
- 'АКЦІОНЕРНЕ ТОВАРИСТВО "РАЙФФАЙЗЕН БАНК"': 'АКЦІОНЕРНЕ ТОВАРИСТВО "РАЙФФАЙЗЕН БАНК АВАЛЬ"'}
-
+    'ТОВ ПІДПРИЄМСТВО КИЇВ': 'ТОВ ПІДПРИЄМСТВО "КИЇВ"',
+    'ТОВ "ПІДПРИЄМСТВО "КИЇВ"': 'ТОВ ПІДПРИЄМСТВО "КИЇВ"',
+    'ПІДПРИЄМСТВО "КИЇВ" ТОВ': 'ТОВ ПІДПРИЄМСТВО "КИЇВ"',
+    'ТОВ "ПІДПРИЄМСТВО КИЇВ"': 'ТОВ ПІДПРИЄМСТВО "КИЇВ"',
+    'ПІДПРИЄМСТВО "КИЇВ"': 'ТОВ ПІДПРИЄМСТВО "КИЇВ"',
+    'АКЦІОНЕРНЕ ТОВАРИСТВО "РАЙФФАЙЗЕН БАНК"': 'АКЦІОНЕРНЕ ТОВАРИСТВО "РАЙФФАЙЗЕН БАНК АВАЛЬ"'
+    }
 
 
 def org_name_clean(t, var_name):
