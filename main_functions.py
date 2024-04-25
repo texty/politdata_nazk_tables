@@ -172,7 +172,7 @@ def list_to_rows(table, main_var, cols_to_select, renamer):
     t = t.reset_index(drop=True)
     
     # замінити ***
-    t = t.transform(replace_stars)
+    t = t.applymap(replace_stars)
 
     return t
 
@@ -188,8 +188,11 @@ def save_as_excel(table, filename, full_update):
         # open and save in excel_df
         excel_df = pd.read_excel(path)
         if len(table) > 0:
-            new_table = pd.concat([excel_df, table], axis=0, ignore_index=True)
-            new_table.to_excel(path, index=False, engine='xlsxwriter')
+            if len(excel_df) > 0:
+                new_table = pd.concat([excel_df, table], axis=0, ignore_index=True)
+                new_table.to_excel(path, index=False, engine='xlsxwriter')
+            else:
+                table.to_excel(path, index=False, engine='xlsxwriter')
         else:
             excel_df.to_excel(path, index=False, engine='xlsxwriter')
 

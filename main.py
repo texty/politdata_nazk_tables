@@ -101,4 +101,4 @@ with open('README.md', 'w') as file:
     file.writelines(data)
 
 # запушити на гітхаб
-os.system('!git add .; git commit -m "data update"; git push origin main')
+os.system('git add . ; git commit -m "data update"; git push origin main')

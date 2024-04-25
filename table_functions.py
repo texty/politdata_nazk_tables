@@ -38,7 +38,7 @@ def table_0_2():
     table = pd.read_excel('data/excel_tables/1_legal_entity_report_info.xlsx')
 
     table_subset = table[['legal_entity_name','legal_entity_edrpou','officeType','party_main_name','party_main_EDRPOU','report_id','report_period','report_year']]
-    table_subset['reported_period'] = table_subset['report_year'].astype(str) + ', ' + table_subset['report_period']
+    table_subset['reported_period'] = table_subset['report_year'].astype(str).copy() + ', ' + table_subset['report_period'].copy()
     table_subset = table_subset.drop(['report_period','report_year'], axis=1).drop_duplicates()
 
     # якщо для 1 періоду є декілька report_id - об'єднати через ;  
