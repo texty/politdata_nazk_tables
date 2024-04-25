@@ -96,6 +96,7 @@ now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
 with open('README.md', 'r') as file:
     data = file.readlines()
+    data = [x for x in data if not x.startswith("**Останнє оновлення:")]
     data.append(f"**Останнє оновлення: {now}**\n")
 with open('README.md', 'w') as file:
     file.writelines(data)
