@@ -333,7 +333,8 @@ def table_5(r_df, full_update, party_list, party_region_list):
         t.loc[t.officeType == 'Центральний офіс', 'legal_entity_region'] = 'Україна'
 
         # sort columns
-        t = t[list(renamer_10.values())+['party_main_name','party_main_EDRPOU','report_id']]
+        sorter = [x for x in list(renamer_10.values())+['party_main_name','party_main_EDRPOU','report_id']  if x in t.columns]
+        t = t[sorter]
 
         # clean t['donor_name']
         var_to_clean = 'donor_name'
@@ -420,7 +421,8 @@ def table_7(r_df, full_update):
         t['bank_account'] = clean_bank_account(t['bank_account'])
 
         # sort columns
-        t = t[list(renamer_12.values()) + ['party_main_name','party_main_EDRPOU','report_id']]
+        sorter = [x for x in list(renamer_12.values())+['party_main_name','party_main_EDRPOU','report_id']  if x in t.columns]
+        t = t[sorter]
 
         save_as_excel(t, filename, full_update)
 
