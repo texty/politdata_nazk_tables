@@ -136,7 +136,7 @@ def table_3_1(r_df, full_update):
             # replace ocassional english letters
             t.loc[t['object_owner_name'].str.contains('[А-Я]', na=False),'object_owner_name'] = t.loc[t['object_owner_name'].str.contains('[А-Я]', na=False),'object_owner_name'].str.replace('C','С').str.replace('I','І')
 
-            save_as_excel(t, filename, full_update)
+        save_as_excel(t, filename, full_update)
 
 
 
