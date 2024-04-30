@@ -172,7 +172,7 @@ def list_to_rows(table, main_var, cols_to_select, renamer):
     t = t.reset_index(drop=True)
     
     # замінити ***
-    t = t.applymap(replace_stars)
+    t = t.apply(lambda x: x.apply(replace_stars))
 
     return t
 
