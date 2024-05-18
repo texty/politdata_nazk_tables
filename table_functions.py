@@ -10,6 +10,7 @@ def table_0_1(r_df, full_update):
     duplicates = r_df[r_df.duplicated(subset=to_subset,keep=False)]
 
     if len(duplicates) > 0:
+        duplicates = duplicates[['partyName','partyCode','party_main_name','party_main_EDRPOU','year', 'types', 'period','reportNumber', 'date']].rename(renamer_1, axis=1)
         save_as_excel(duplicates, '0_report_duplcates', full_update)
 
 
