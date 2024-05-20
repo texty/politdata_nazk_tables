@@ -7,7 +7,7 @@ from table_functions import table_0_1, table_0_2, table_1, table_2_1, table_2_2,
 
 
 # !!! set to True if you want to update all data from the very beginning
-full_update = False
+full_update = True
 
 
 ## Download party info
