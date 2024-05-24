@@ -26,5 +26,5 @@
 
 ## Додаткові таблиці-довідники:
 - [0_files_where_to_look_for_local_parties](https://github.com/texty/politdata_nazk_tables/raw/main/data/excel_tables/0_files_where_to_look_for_local_parties.xlsx): Перелік файлів, в яких є інформація про кожну з партій у масиві.
-- [0_report_duplcates](https://github.com/texty/politdata_nazk_tables/raw/main/data/excel_tables/0_report_duplcates.xlsx): Оскільки в базі деякі звіти задубльовано, тут можна подивитись які саме (щоби надалі уникнути помилок при агрегуванні дані).
+- [0_report_duplcates](https://github.com/texty/politdata_nazk_tables/raw/main/data/excel_tables/0_report_duplcates.xlsx): Якщо в базі деякі звіти буде задубльовано, тут можна буде подивитись які саме (щоби надалі уникнути помилок при агрегуванні дані).
 - [0_reports_per_period_per_party](https://github.com/texty/politdata_nazk_tables/raw/main/data/excel_tables/0_reports_per_period_per_party.xlsx): За який період (квартал та рік) є звіти від цієї політичної партії в масиві.
