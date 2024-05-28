@@ -131,12 +131,21 @@ def party_name_cleaner(r_df, party_variable):
 
 # уніфікація party_main_name (беремо з останнього звіту за EDRPOU)
 def unify_party_main_name(r_df):
+
+    # уніфікувати назву центрального офісу
     party_renamer = r_df[['date','party_main_EDRPOU','party_main_name']]
     party_renamer = party_renamer.sort_values(['party_main_EDRPOU','date'], ascending=True)
     party_renamer = party_renamer.drop_duplicates(['party_main_EDRPOU'], keep = 'last')
     party_renamer = party_renamer.set_index('party_main_EDRPOU').to_dict()['party_main_name']
-
     r_df['party_main_name'] = r_df['party_main_EDRPOU'].replace(party_renamer)
+
+    # уніфікувати назву регіонального офісу
+    party_renamer = r_df[['date','partyCode','partyName']]
+    party_renamer = party_renamer.sort_values(['partyCode','date'], ascending=True)
+    party_renamer = party_renamer.drop_duplicates(['partyCode'], keep = 'last')
+    party_renamer = party_renamer.set_index('partyCode').to_dict()['partyName']
+    r_df['partyName'] = r_df['partyCode'].replace(party_renamer)
+
     return r_df
 
 # Якщо серед донорів зустрічаються партійні осередки чи центральний офіс політичної партії 'donor_type' замінити на “партійний осередок” (визначила по 'donor_edrpou')
