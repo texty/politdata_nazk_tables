@@ -1,7 +1,7 @@
 # politdata_nazk_tables
 Партійні фінанси з АРІ від НАЗК перетворені на набір таблиць для зручного аналізу.
 
-**Останнє оновлення: 2024-05-28 13:04**
+**Останнє оновлення: 2024-05-28 14:19**
 
 ## Опис таблиць в репозиторії:
 - [1_legal_entity_report_info](https://github.com/texty/politdata_nazk_tables/raw/main/data/excel_tables/1_legal_entity_report_info.xlsx): Загальна інформація про партію/осередок.
