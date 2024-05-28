@@ -98,8 +98,8 @@ def party_name_cleaner(r_df, party_variable):
 
     r_df[party_variable] = r_df[party_variable].str.upper()
 
-    to_delete = ['^ПОЛІТИЧНА ПАРТІЯ ', '^ВСЕУКРАЇНСЬКЕ ОБ\'ЄДНАННЯ ', 'ВСЕУКРАЇНСЬКЕ ПОЛІТИЧНЕ ОБ\'ЄДНАННЯ',
-                'ПОЛІТИЧЯНА ПАРТІЯ','СОЦІАЛЬНО-ЕКОЛОГІЧНА ПАРТІЯ', 'ВСЕУКРАЇНСЬКЕ ОБ\'ЄДНАННЯ', 'СОЦІАЛЬНО-ПОЛІТИЧНИЙ СОЮЗ ',
+    to_delete = ['^ПОЛІТИЧНА ПАРТІЯ', '^ВСЕУКРАЇНСЬКЕ ОБ\'ЄДНАННЯ', 'ВСЕУКРАЇНСЬКЕ ПОЛІТИЧНЕ ОБ\'ЄДНАННЯ', 'ПОЛІТИЧНОЇ ПАРТІЇ',
+                'ПОЛІТИЧЯНА ПАРТІЯ','СОЦІАЛЬНО-ЕКОЛОГІЧНА ПАРТІЯ', 'ВСЕУКРАЇНСЬКЕ ОБ\'ЄДНАННЯ', 'СОЦІАЛЬНО-ПОЛІТИЧНИЙ СОЮЗ',
                 '«', '»', '\"']
     for words in to_delete:
         r_df[party_variable] = r_df[party_variable].str.replace(words, '', regex=True)
@@ -121,13 +121,23 @@ def party_name_cleaner(r_df, party_variable):
         'БЛОК ВІЛКУЛА УКРАЇНСЬКА ПЕРСПЕКТИВА':'БЛОК ВІЛКУЛА «УКРАЇНСЬКА ПЕРСПЕКТИВА»',
         'НАЦІОНАЛЬНО-ДЕМОКРАТИЧНЕ ОБ\'ЄДНАННЯ УКРАЇНА':'НАЦІОНАЛЬНО-ДЕМОКРАТИЧНЕ ОБ\'ЄДНАННЯ «УКРАЇНА»',
         'ГРОМАДЯНСЬКИЙ РУХ СВІДОМІ':'ГРОМАДЯНСЬКИЙ РУХ «СВІДОМІ»',
-        'ВО ПЛАТФОРМА ГРОМАД':'ПЛАТФОРМА ГРОМАД'
+        'ВО ПЛАТФОРМА ГРОМАД':'ПЛАТФОРМА ГРОМАД',
+        'ГРОМАДЯНСЬКАПЛАТФОРМА':'ГРОМАДЯНСЬКА ПЛАТФОРМА'
     }
 
     r_df[party_variable] = r_df[party_variable].replace(party_renamer)
 
     return r_df
 
+# уніфікація party_main_name (беремо з останнього звіту за EDRPOU)
+def unify_party_main_name(r_df):
+    party_renamer = r_df[['date','party_main_EDRPOU','party_main_name']]
+    party_renamer = party_renamer.sort_values(['party_main_EDRPOU','date'], ascending=True)
+    party_renamer = party_renamer.drop_duplicates(['party_main_EDRPOU'], keep = 'last')
+    party_renamer = party_renamer.set_index('party_main_EDRPOU').to_dict()['party_main_name']
+
+    r_df['party_main_name'] = r_df['party_main_EDRPOU'].replace(party_renamer)
+    return r_df
 
 # Якщо серед донорів зустрічаються партійні осередки чи центральний офіс політичної партії 'donor_type' замінити на “партійний осередок” (визначила по 'donor_edrpou')
 def check_edrpou_for_party(table, var_edrpou_to_search, var_to_replace, party_list, party_region_list):

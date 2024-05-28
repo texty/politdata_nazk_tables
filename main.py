@@ -2,12 +2,12 @@
 
 import os
 from datetime import datetime
-from main_functions import download_party_info, download_all_reports, party_name_cleaner
+from main_functions import download_party_info, download_all_reports, party_name_cleaner, unify_party_main_name
 from table_functions import table_0_1, table_0_2, table_1, table_2_1, table_2_2, table_3_1, table_3_2, table_3_3, table_3_4, table_3_5, table_4, table_5, table_6, table_7, table_8, table_9_1, table_9_2, table_9_3, table_9_5, table_10, files_where_to_look_for_local_parties
 
 
 # !!! set to True if you want to update all data from the very beginning
-full_update = False
+full_update = True
 
 
 ## Download party info
@@ -17,7 +17,14 @@ party_list, party_region_list = download_party_info()
 ## Download all reports
 r_df = download_all_reports(full_update)
 r_df = party_name_cleaner(r_df, party_variable = 'party_main_name')
+r_df = unify_party_main_name(r_df)
 
+
+# if full update: delete all files from data/excel_tables
+if full_update:
+    for file in os.listdir('data/excel_tables'):
+        if file.endswith('.xlsx'):
+            os.remove('data/excel_tables/' + file)
 
 
 ## Tables
