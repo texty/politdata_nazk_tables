@@ -2,10 +2,6 @@ name: run main.py
 
 on:
   schedule:
-    # At 08:00 on Monday
-    # - cron: '0 8 * * 1' 
-    
-    # TEST every 5 minutes
     - cron: '*/5 * * * *'
 
 jobs:
