@@ -2,8 +2,14 @@ name: run main.py
 
 on:
   schedule:
-    - cron: '1 * * * 1'
+    - cron: '35 * * * 1'
     # - cron: '0 8 * * 1'
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 permissions: write-all
 
@@ -30,5 +36,7 @@ jobs:
           git config user.email 'actions@users.noreply.github.com'
           git config user.name 'GitHub Actions'
           git add .
-          git commit -m 'data update' || exit 0 
-          git push
+          git commit -m 'automated data update' || exit 0 
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
