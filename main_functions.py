@@ -58,7 +58,7 @@ def download_all_reports(full_update):
             one_report_df['report_id'] = i
             r_df = pd.concat([r_df, one_report_df], axis=0, ignore_index=True)
 
-            sleep(0.2)
+            sleep(1)
 
         # Файл зі всіма завантаженими звітами
         if full_update:
