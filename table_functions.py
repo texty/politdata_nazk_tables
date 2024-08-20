@@ -613,7 +613,7 @@ def table_9_5(r_df, full_update):
 
             # clean t['recipient_name']
 
-            var_to_clean = 'onor_name'
+            var_to_clean = 'donor_name'
 
             t[var_to_clean] = t[var_to_clean].str.upper()
             t[var_to_clean] = t[var_to_clean].str.replace('\s+',' ', regex=True).str.strip()

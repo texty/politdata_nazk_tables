@@ -1,4 +1,4 @@
-import pandas as pd, requests
+import pandas as pd, requests, json
 from time import sleep
 from tqdm import tqdm
 
@@ -32,6 +32,10 @@ def download_party_info():
 
 # завантажити всі звіти
 def download_all_reports(full_update):
+
+    # delete previous (if exists) and create new clean 'data/data_for_downloader/error_report_ids.txt'
+    with open('data/data_for_downloader/error_report_ids.txt', 'w') as f:
+        f.write('')
     
     # завантажити список всіх звітів, які є в системі
     report_list = requests.get('https://politdata.nazk.gov.ua/api/getreportslist').json()
@@ -51,14 +55,40 @@ def download_all_reports(full_update):
 
         # download
         r_df = pd.DataFrame()
+        errs = []
         for i in tqdm(reports_to_download):
-            one_report = requests.get(f'https://politdata.nazk.gov.ua/api/getreport/{i}').json()
-            
-            one_report_df = pd.DataFrame(one_report)
-            one_report_df['report_id'] = i
-            r_df = pd.concat([r_df, one_report_df], axis=0, ignore_index=True)
+            try:
+                one_report = requests.get(f'https://politdata.nazk.gov.ua/api/getreport/{i}')
+                if one_report.status_code != 204 and len(one_report.text) > 0:
+                    one_report = one_report.json()
+                    
+                    one_report_df = pd.DataFrame(one_report)
+                    one_report_df['report_id'] = i
+                    r_df = pd.concat([r_df, one_report_df], axis=0, ignore_index=True)
 
-            sleep(1)
+                    sleep(1)
+            except:
+                # if error, add report id to list and save as txt
+                errs.append(i)
+        
+        # try download reports from errs (if any)
+        if len(errs) > 0:
+            for i in errs:
+                try:
+                    one_report = requests.get(f'https://politdata.nazk.gov.ua/api/getreport/{i}')
+                    if one_report.status_code != 204 and len(one_report.text) > 0:
+                        one_report = one_report.json()
+                        
+                        one_report_df = pd.DataFrame(one_report)
+                        one_report_df['report_id'] = i
+                        r_df = pd.concat([r_df, one_report_df], axis=0, ignore_index=True)
+
+                        sleep(1)
+                except:
+                    # if error, save to txt
+                    with open('data/data_for_downloader/error_report_ids.txt', 'a') as f:
+                        f.write(str(i) + '\n')
+                    pass
 
         # Файл зі всіма завантаженими звітами
         if full_update:
